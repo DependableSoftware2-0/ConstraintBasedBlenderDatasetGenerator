@@ -17,8 +17,10 @@ print("All modules are sucessfully imported")
 
 class BopUtils():
 
-    def __init__(self,mesh2class):
+    def __init__(self,mesh2class,res_x,res_y):
         self.mesh2class = mesh2class
+        self.res_x = res_x
+        self.res_y = res_y
 
     def get_all_coordinates(self, mesh_name):
         print("Mesh name is : ", mesh_name)
@@ -47,7 +49,7 @@ class BopUtils():
             ## Formulate line corresponding to the bounding box of one class top left width and height
             # txt_coordinates = str(_class) + ' ' + str(x1) + ' ' + str(y2) + ' ' + str(width) + ' ' + str(height) + '\n'
             txt_coordinates = {
-                "bbox_obj":[x1,x2,width,height],
+                "bbox_obj":[x1*self.res_x,x2*self.res_y,width*self.res_x,height*self.res_y],
                 "bbox_visib": [x1,x2,width,height],
                 "class_label": self.mesh2class[mesh_name],
                 "class_name": mesh_name
@@ -263,9 +265,13 @@ if __name__ == '__main__':
     # Dictionary for class names to index
     class_to_idx = {value:key for key,value in enumerate(object_names)}
     print("Class to index values : ", class_to_idx)
+
+    scene = bpy.context.scene
+    res_x = scene.render.resolution_x
+    res_y = scene.render.resolution_y 
     
     # Create instance for the bounding box helper class
-    bounding_box_helper = BopUtils(mesh2class=class_to_idx)
+    bounding_box_helper = BopUtils(mesh2class=class_to_idx,res_x=res_x,res_y=res_y)
     
     step_value = (100-0)/NUM_OF_SAMPLES
     rendering_values = np.arange(0,100,step_value)
