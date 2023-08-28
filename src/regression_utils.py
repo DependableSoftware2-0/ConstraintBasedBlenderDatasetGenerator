@@ -292,6 +292,8 @@ class RegressionDatasetGeneration():
 
         # Get the parameters list
         parameters = dataset_helper.get_parameters(json_object=json_object)
+        print("\n Parameters are : ", parameters)
+        print("\n###############################################################################")
 
         # Get the test cases list
         test_cases = dataset_helper.get_test_cases(json_object=json_object)
@@ -405,8 +407,6 @@ class RegressionDatasetGeneration():
                     elif str('random_textures') in parameters:
                         material = blender_helper.set_random_pbr_img_textures(
                             textures_path=textures_dir, obj_name='Background_plane', scale=2.5)
-                    else:
-                        pass
 
                     if test_case == 'normal_training':
                         if json_object['Test_cases'][str(test_case)]['light_parameters']['random_lighting']=='True':
