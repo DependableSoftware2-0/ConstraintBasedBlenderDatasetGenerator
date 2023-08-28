@@ -351,7 +351,6 @@ class Blender_helper:
         Keyword arguments:
         obj_to_change: blender object
         """
-        random.seed(42)
 
         random_rotat_values = [
             random.random()*2*math.pi, random.random()*2*math.pi, random.random()*2*math.pi]
@@ -478,7 +477,7 @@ class Blender_helper:
         """
 
         texture_paths = self.get_texture_paths(textures_path)
-
+        # print("Texture paths : ",texture_paths)
         texture_path = random.choice(texture_paths)
 
         material_name = str(texture_path.split('/')[-2])
