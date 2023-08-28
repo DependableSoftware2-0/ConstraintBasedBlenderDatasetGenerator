@@ -1,13 +1,8 @@
 # import modules
-import argparse
 import json
-import os
+import math
+from math import radians,tan,cos,sin
 import random
-import sys
-import time
-from pathlib import Path
-
-import bpy
 import numpy as np
 
 from blender_utils import Blender_helper
@@ -104,3 +99,40 @@ class Dataset_helper:
             start_value, stop_value + step_value, step_value)
 
         return numbers_list
+    
+    def random_placement(self,obj, camera, fov_degrees=None, min_distance_factor=.5, max_distance_factor=3.0):
+        """
+        Place a sinlge object randomly in camera view
+        """
+        # Get the current camera field of view in degrees if not provided
+        if fov_degrees is None:
+            fov_radians = camera.data.angle
+            fov_degrees = math.degrees(fov_radians)
+        else:
+            fov_radians = radians(fov_degrees)
+        
+        # Calculate camera height and width for the current FOV
+        aspect_ratio = camera.data.sensor_width / camera.data.sensor_height
+        camera_height = 2 * camera.location.z * tan(fov_radians / 2)
+        camera_width = camera_height * aspect_ratio
+        
+        object_size_percentage = 0.2
+        object_width = object_size_percentage * camera_width
+
+        max_distance = object_width / (2 * tan(fov_radians / 2))
+        
+        min_distance = min_distance_factor * max_distance
+        
+        # Calculate random distance within the range
+        random_distance = random.uniform(min_distance, max_distance)
+        
+        # Calculate random angle (azimuth) around the camera
+        random_angle = random.uniform(0, 2 * math.pi)
+        
+        # Calculate the object position relative to the camera
+        random_x = random_distance * cos(random_angle)
+        random_y = random_distance * sin(random_angle)
+        random_z = obj.dimensions.z / 2
+        
+        # Set the object location
+        obj.location = (random_x, random_y, random_z)
