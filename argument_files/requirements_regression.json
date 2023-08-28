@@ -3,7 +3,7 @@
     
     "dataset_name": "ycb",
 
-    "Num_images_per_class" : 5,
+    "Num_images_per_class" : 100,
 
     "render_parameters": {
         "device": "GPU",
@@ -14,16 +14,16 @@
     },
 
     "Parameters": {
-        "random_rotation_object": "True",
-        "random_placement_object":"True",
+        "random_rotation_object": "False",
+        "random_placement_object":"False",
         "random_color": "False",
-        "random_textures": "True"
+        "random_textures": "False"
     },
 
     "Test_cases": {
         "normal_training":{
 
-            "condition":"True",
+            "condition":"False",
 
             "light_parameters":{
                 "random_lighting": "True",
@@ -44,13 +44,13 @@
         
         "distance": {
             
-            "condition": "False",
+            "condition": "True",
             "min_value": "-10",
             "max_value": "-50"},
 
         "blur":{
             
-            "condition":"False",
+            "condition":"True",
             
             "min_value": "0.05",
             "max_value":"0.4"
