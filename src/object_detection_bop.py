@@ -636,7 +636,7 @@ class ObjectDetectionBop:
         gt_parameters = {
             "cam_R_m2c":cam_R_m2c,
             "cam_t_m2c":cam_t_m2c,
-            "obj_id": mesh2class[obj_name],
+            "obj_id": int(mesh2class[obj_name]),
             "obj_name": obj_name
         }
         return gt_parameters
@@ -702,7 +702,7 @@ class ObjectDetectionBop:
             txt_coordinates = {
                 "bbox_obj":[x1*res_x,y1*res_y,width*res_x,height*res_y],
                 "bbox_visib": [x1,y1,width,height],
-                "class_label": mesh2class[mesh_name],
+                "class_label": int(mesh2class[mesh_name]),
                 "class_name": mesh_name
             }
             return txt_coordinates
