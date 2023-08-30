@@ -628,7 +628,7 @@ class ObjectDetectionBop:
         T_m2w = np.array(obj.matrix_world)
         T_c2w = np.array(camera_object.matrix_world)
 
-        T_m2c = T_m2w @ np.linalg.inv(T_c2w)
+        T_m2c = np.linalg.inv(T_c2w) @ T_m2w
         
         cam_R_m2c = T_m2c[:3, :3].flatten().tolist()
         cam_t_m2c = T_m2c[:3, 3].flatten().tolist()
