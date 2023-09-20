@@ -32,16 +32,24 @@ class RegressionDatasetGeneration():
         return ''
 
     
-    def find_bounding_box(self, obj):
-        camera_object = bpy.data.objects['Camera']
-        matrix = camera_object.matrix_world.normalized().inverted()
+    def find_bounding_box(self, obj,camera):
+        """
+        Returns camera space bounding box of the mesh object.
+
+        Gets the camera frame bounding box, which by default is returned without any transformations applied.
+        Create a new mesh object based on self.carre_bleu and undo any transformations so that it is in the same space as the
+        camera frame. Find the min/max vertex coordinates of the mesh visible in the frame, or None if the mesh is not in view.
+        """
+
+        """ Get the inverse transformation matrix. """
+        matrix = camera.matrix_world.normalized().inverted()
         """ Create a new mesh data block, using the inverse transform matrix to undo any transformations. """
         mesh = obj.to_mesh(preserve_all_data_layers=True)
         mesh.transform(obj.matrix_world)
         mesh.transform(matrix)
+
         """ Get the world coordinates for the camera frame bounding box, before any transformations. """
-        frame = [-v for v in camera_object.data.view_frame(
-            scene=bpy.context.scene)[:3]]
+        frame = [-v for v in camera.data.view_frame(scene=self.scene)[:3]]
 
         lx = []
         ly = []
@@ -66,6 +74,7 @@ class RegressionDatasetGeneration():
             lx.append(x)
             ly.append(y)
 
+
         """ Image is not in view if all the mesh verts were ignored """
         if not lx or not ly:
             return None
@@ -80,18 +89,57 @@ class RegressionDatasetGeneration():
             return None
 
         """ Figure out the rendered image size """
-        render = bpy.context.scene.render
+        render = self.scene.render
         fac = render.resolution_percentage * 0.01
         dim_x = render.resolution_x * fac
         dim_y = render.resolution_y * fac
-
-        # Verify there's no coordinates equal to zero
+        
+        ## Verify there's no coordinates equal to zero
         coord_list = [min_x, min_y, max_x, max_y]
         if min(coord_list) == 0.0:
             indexmin = coord_list.index(min(coord_list))
             coord_list[indexmin] = coord_list[indexmin] + 0.0000001
 
         return (min_x, min_y), (max_x, max_y)
+
+    def format_coordinates(self,coordinates, mesh_name,mesh2class):
+
+        """
+        Format bounding box coordinates in bop format.
+        """
+
+        res_x = self.scene.render.resolution_x
+        res_y = self.scene.render.resolution_y
+
+        if coordinates:
+
+            ## Change coordinates reference frame
+            x1 = (coordinates[0][0])
+            x2 = (coordinates[1][0])
+            y1 = (1 - coordinates[1][1]) 
+            y2 = (1 - coordinates[0][1])
+            
+            ## Get final bounding box information
+            # Calculate the absolute width of the bounding box
+            width = (x2-x1)
+            # Calculate the absolute height of the bounding box
+            height = (y2-y1)
+            # Calculate the absolute center of the bounding box
+            cx = x1 + (width/2) 
+            cy = y1 + (height/2)
+
+            ## Formulate line corresponding to the bounding box of one class top left width and height
+            # txt_coordinates = str(_class) + ' ' + str(x1) + ' ' + str(y2) + ' ' + str(width) + ' ' + str(height) + '\n'
+            txt_coordinates = {
+                "bbox_obj":[x1*res_x,y1*res_y,width*res_x,height*res_y],
+                "bbox_visib": [x1,y1,width,height],
+                "class_label": mesh2class[mesh_name],
+                "class_name": mesh_name
+            }
+            return txt_coordinates
+        # If the current class isn't in view of the camera, then pass
+        else:
+            pass
 
     def get_direction_pca(self, point_cloud):
 
@@ -281,7 +329,25 @@ class RegressionDatasetGeneration():
             json.dump(prameters_dict, json_file, indent=4)
         
         return None
+    
+    def write_regression_trajectory_annotations(self, mesh_name,mesh2class,object_names, json_file_path,trajectory_num):
 
+        prameters_dict = self.get_blender_parameters(obj_name=mesh_name,obj_names=object_names)
+
+        print("Mesh name is : ",mesh_name)
+        annotations = self.get_all_coordinates(mesh_name,mesh2class)
+        print("Annotatons are : ", annotations)
+
+        prameters_dict['annotations'] = annotations
+        prameters_dict['trajectory_num'] = trajectory_num
+
+        # Modify to store json files
+        with open(json_file_path, "w") as json_file:
+            json.dump(prameters_dict, json_file, indent=4)
+        
+        return None
+
+    
     def generate_regression_dataset(self,json_object,models_dir,textures_dir,constraint_textures_dir,output_dir,dataset_name):
 
         OUTPUT_PATH = output_dir
@@ -303,6 +369,7 @@ class RegressionDatasetGeneration():
         # Clear the default scene
         blender_helper.clear_scene()
         # Import objects
+        print("Models path inside the function is : ", models_dir)
         blender_helper.import_objects_obj_format(models_dir=models_dir, 
                                                  target_object_size=0.5, 
                                                  dataset_name=dataset_name)
@@ -357,6 +424,7 @@ class RegressionDatasetGeneration():
                 light_sequential_values = dataset_helper.get_sequential_step_values(test_case,num_elements=renders_per_object,json_object=json_object)
             elif test_case == 'distance':
                 distance_sequential_values = dataset_helper.get_sequential_step_values(test_case,num_elements=renders_per_object,json_object=json_object)
+                
             elif test_case == 'blur':
                 blur_sequential_values = dataset_helper.get_sequential_step_values(test_case,num_elements=renders_per_object,json_object=json_object)
             else:
@@ -482,4 +550,228 @@ class RegressionDatasetGeneration():
                 if file.endswith(".obj"):
                     count+=1
         return count
+    
+    def generate_regression_dataset_trajectories(self,json_object,models_dir,textures_dir,num_trajectories,output_dir,dataset_name):
+
+        OUTPUT_PATH = output_dir
+        
+        # Create instance for the blender helper class
+        blender_helper = Blender_helper()
+        dataset_helper = Dataset_helper()
+
+        # Get the parameters list
+        parameters = dataset_helper.get_parameters(json_object=json_object)
+        print("\n Parameters are : ", parameters)
+        print("\n###############################################################################")
+
+        # Get the test cases list
+        test_cases = dataset_helper.get_test_cases(json_object=json_object)
+
+        
+
+        # Clear the default scene
+        blender_helper.clear_scene()
+        # Import objects
+        blender_helper.import_objects_obj_format(models_dir=models_dir, 
+                                                 target_object_size=0.5, 
+                                                 dataset_name=dataset_name)
+        
+        background_plane, light_source, camera, camera_track, light_track = blender_helper.add_regression_scene()
+
+        obj_names = blender_helper.get_object_names(background_plane_name='Background_plane',
+                                                    camera_track='camera_track',
+                                                    light_track='light_track'
+                                                    )
+
+
+        print("Number of objects present in the scene are : ", len(obj_names))
+
+        parameters_dict = {}
+
+        num_objects = len(obj_names)
+        obj_renders_per_split = Dataset_helper().get_object_render_per_split(json_object)
+        total_render_count = sum([num_objects*r[1] for r in obj_renders_per_split])
+        total_render_count = total_render_count*num_trajectories
+        
+        # Set render parameters:
+        render_parameters = json_object.get('render_parameters',{})
+        blender_helper.set_render_parameters(device=render_parameters.get("device","CPU"),
+                                             render_engine=render_parameters.get("render_engine","CPU"),
+                                             res_x=int(render_parameters.get("res_x","96")),
+                                             res_y=int(render_parameters.get("res_y","96")) ,
+                                             num_samples=int(render_parameters.get("num_samples","100"))
+                                             )
+        # Set the material
+        material = None
+        
+        
+        # Dictionary for class names to mesh
+        class_to_idx = {value: key for key, value in enumerate(obj_names)}
+        print("Class to index values : ", class_to_idx)
+
+        
+        print("***************************  Rendering the images  ***************************")
+
+        # Set all objects to be hidden initially while rendering.
+        blender_helper.hide_objects(obj_names=obj_names, hide=True)
+        
+        # Create start index for the images and starting time
+        start_time = time.time()
+
+        for test_case, renders_per_object in obj_renders_per_split:
+            print("\n\n Test case is : ", test_case)
+            print(f'Starting split: {test_case} | Total renders: {renders_per_object * num_objects}')
+            print('**'*30)
+
+            if test_case == 'lighting':
+                light_sequential_values = dataset_helper.get_sequential_step_values(test_case,num_elements=1000,json_object=json_object)
+            
+            elif test_case == 'distance':
+                distance_sequential_values = dataset_helper.get_sequential_step_values(test_case,num_elements=1000,json_object=json_object)
+
+                light_sequential_values = dataset_helper.get_sequential_step_values_limits(start_value=float(json_object['Test_cases']['distance']['light_parameters']['min_value'])
+                                                                                           ,stop_value=float(json_object['Test_cases']['distance']['light_parameters']['max_value']),
+                                                                                            num_elements=1000)
+                
+                blur_sequential_values = dataset_helper.get_sequential_step_values_limits(start_value=float(json_object['Test_cases']['distance']['blur_parameters']['min_value'])
+                                                                                          ,stop_value=float(json_object['Test_cases']['distance']['blur_parameters']['max_value'])
+                                                                                          , num_elements=1000)
+                
+            elif test_case == 'blur':
+                blur_sequential_values = dataset_helper.get_sequential_step_values(test_case,num_elements=1000,json_object=json_object)
+            else:
+                pass
+            
+            material = blender_helper.set_random_pbr_img_textures(textures_path=textures_dir, obj_name='Background_plane', scale=2.5)
+            
+
+            for obj_name in obj_names:
+                print(f'Starting object: {test_case}/{obj_name}')
+                print('--'*30)
+
+                # get the object and make it visible during rendering.
+                obj_to_render = blender_helper.get_object(obj_name=obj_name)
+                obj_to_render.hide_render = False
+
+                # Reset the location and rotation of the object
+                blender_helper.reset_obj_location_rotation(obj=obj_to_render)
+
+                # Adjust the position of the objects to be above the plane.
+                blender_helper.adjust_object_position(obj=obj_to_render,
+                                                      target_size=0.1,
+                                                      background_plane='Background_plane')
+                
+                # Track the camera object
+                blender_helper.track_object(
+                    tracking_object_name='Camera', object_to_track=background_plane) 
+
+                # Track the light to the object
+                blender_helper.track_object(
+                    tracking_object_name='Sun', object_to_track=background_plane)
+
+                
+                for idx in range(num_trajectories):
+                    
+                    # random rotation
+                    blender_helper.set_random_rotation(obj_to_change=obj_to_render)
+
+                    # random placement
+                    blender_helper.random_placement(obj=obj_to_render,camera=camera,min_distance_factor=0.1)
+
+                    # random background texture
+                    material = blender_helper.set_random_pbr_img_textures(
+                            textures_path=textures_dir, obj_name='Background_plane', scale=2.5)
+                    
+                    # get random sequential values based on the num trajectories
+                    if test_case == 'distance':
+                        new_distance_values = np.sort(np.random.choice(distance_sequential_values, size=renders_per_object, replace=False))
+                        
+                        new_blur_values = np.sort(np.random.choice(blur_sequential_values, size=renders_per_object, replace=False))
+                        
+                        new_light_values = np.sort(np.random.choice(light_sequential_values, size=renders_per_object, replace=False))
+                        
+                    elif test_case == 'blur':
+                        new_blur_values = np.sort(np.random.choice(blur_sequential_values, size=renders_per_object, replace=False))
+                    elif test_case == 'lighting':
+                        new_light_values = np.sort(np.random.choice(light_sequential_values, size=renders_per_object, replace=False))
+                
+                    start_idx = 0
+                    # Main rendering loop.
+                    for i in range(start_idx, start_idx+renders_per_object):
+                    
+                        if test_case == 'normal_training':
+                            if json_object['Test_cases'][str(test_case)]['light_parameters']['random_lighting']=='True':
+                                light_min = float(json_object['Test_cases'][str(test_case)]['light_parameters']['min_value'])
+                                light_max = float(json_object['Test_cases'][str(test_case)]['light_parameters']['max_value'])
+                                
+                                blender_helper.set_random_lighting(light_source_name='Sun', min_value=light_min, max_value=light_max)
+                            else:
+                                bpy.data.lights[str('Sun')].energy = 3.0
+
+                            if json_object['Test_cases'][str(test_case)]['distance_parameters']['random_distance']=='True':
+                                distance_min,distance_max = float(json_object['Test_cases'][str(test_case)]['distance_parameters']['min_value']),float(json_object['Test_cases'][str(test_case)]['distance_parameters']['min_value'])
+                                blender_helper.set_camera_postion_on_path(camera_name='Camera',
+                                                                  distance_value = random.uniform(distance_min,distance_max)
+                                                                  )
+                            else:
+                                camera.constraints['Follow Path'].offset = -38
+                    
+                        elif test_case == 'lighting':
+                            bpy.data.lights['Sun'].energy = new_light_values[i]
+                            blender_helper.set_camera_postion_on_path(camera_name='Camera',
+                                                                  distance_value=-38
+                                                                  )
+                        elif test_case == 'distance':
+                            blender_helper.set_camera_postion_on_path(camera_name='Camera',
+                                                                  distance_value = new_distance_values[i]
+                                                                  )
+                            
+                            if json_object['Test_cases']['distance']['light_parameters']['condition'] == "True":
+                                bpy.data.lights['Sun'].energy = new_light_values[i]
+                            elif json_object['Test_cases']['distance']['light_parameters']['condition'] == "False":
+                                bpy.data.lights['Sun'].energy = 3.0
+                            
+                            if json_object['Test_cases']['distance']['blur_parameters']['condition'] == "True":
+                                blender_helper.add_blur_dof(blur_value=new_blur_values[i],focus_background_name='Background_plane')
+                            
+                        elif test_case == 'blur':
+                            bpy.data.lights['Sun'].energy = 3.0
+                            blender_helper.set_camera_postion_on_path(camera_name='Camera',
+                                                                  distance_value=-38
+                                                                  )
+                            blender_helper.add_blur_dof(blur_value=new_blur_values[i],focus_background_name='Background_plane')
+
+                        print(f'\nRendering image {idx+i +1} of {total_render_count}')
+
+                        folder_name = str(dataset_name)+'_'+str(test_case)
+
+                        # Update file path and render
+                        bpy.context.scene.render.filepath = str(OUTPUT_PATH / folder_name / obj_name / 'images' / f'{str(idx)}_{str(i)}.png')
+                        bpy.ops.render.render(write_still=True) # RENDER THE IMAGE
+
+                        json_folder = str(OUTPUT_PATH / folder_name / obj_name / f'json_files')
+                        if not os.path.exists(json_folder):
+                            os.mkdir(json_folder)
+                        json_file_path = os.path.join(json_folder, str(f'{str(idx)}_{str(i)}.json'))    
+                    
+                        # Save the blender parameters and write the regression annotations
+                        self.write_regression_trajectory_annotations(mesh_name=obj_name,mesh2class=class_to_idx,
+                                                                     object_names=obj_names,
+                                                                     json_file_path=json_file_path,
+                                                                     trajectory_num=idx)
+
+                        if str('random_textures') in parameters:
+                            if material != None:
+                                bpy.data.materials.remove(material)
+                            else:
+                                pass
+
+                    # Set the blur value back to normal ie, turn off depth of field
+                    camera.data.dof.use_dof = False
+                # Hide the object again so that it will not appear in the next iteration.
+                obj_to_render.hide_render = True
+                # Update the starting index
+                start_idx += renders_per_object
+        
+        return None
     
