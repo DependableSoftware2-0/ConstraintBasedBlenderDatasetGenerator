@@ -100,6 +100,14 @@ class Dataset_helper:
 
         return numbers_list
     
+    def get_sequential_step_values_limits(self, start_value,stop_value, num_elements):
+
+        step_value = (stop_value - start_value) / (num_elements - 1)
+        numbers_list = np.arange(
+            start_value, stop_value + step_value, step_value)
+
+        return numbers_list
+    
     def random_placement(self,obj, camera, fov_degrees=None, min_distance_factor=.5, max_distance_factor=3.0):
         """
         Place a sinlge object randomly in camera view
