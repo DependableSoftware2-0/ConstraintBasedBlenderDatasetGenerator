@@ -598,18 +598,26 @@ class ObjectDetectionBop:
         """
             
         # transformation of camera with respect to world.
-        T_C_W = camera_object.matrix_world
+        T_C_W = np.array(camera_object.matrix_world)
+        
+        #### NEW MODIFICATION TO ROTATE ####
+        ## to rotate along 180 degrees in x axis to make the y axis pointing towards the objects
+        rot_x = np.array([[1, 0, 0],
+                          [0, -1, 0],
+                          [0, 0, -1]])
+        T_C_W[:3,:3] = T_C_W[:3,:3] @ rot_x
+        #### NEW MODIFICATION TO ROTATE ####
 
         # transformation of world with respect to camera.
         T_W_C = np.linalg.inv(T_C_W)
 
         cam_R_w2c = T_W_C[:3, :3].flatten().tolist()
-        cam_t_w2c = T_W_C[:3,3].flatten().tolist()
+        cam_t_w2c = (T_W_C[:3,3]*1000).flatten().tolist()
 
         scene_parameters = {"cam_K": self.get_k_matrix(camera_object), 
                             "cam_R_w2c": cam_R_w2c, 
                             "cam_t_w2c": cam_t_w2c,  
-                            "depth_scale": 1}
+                            "depth_scale": 10}
 
         return scene_parameters
 
@@ -627,11 +635,19 @@ class ObjectDetectionBop:
 
         T_m2w = np.array(obj.matrix_world)
         T_c2w = np.array(camera_object.matrix_world)
+        
+        #### NEW MODIFICATION TO ROTATE ####
+        ## to rotate along 180 degrees in x axis to make the y axis pointing towards the objects
+        rot_x = np.array([[1, 0, 0],
+                          [0, -1, 0],
+                          [0, 0, -1]])
+        T_c2w[:3,:3] = T_c2w[:3,:3] @ rot_x
+        #### NEW MODIFICATION TO ROTATE ####
 
-        T_m2c = np.linalg.inv(T_c2w) @ T_m2w
+        T_m2c = np.dot(np.linalg.inv(T_c2w), T_m2w)
         
         cam_R_m2c = T_m2c[:3, :3].flatten().tolist()
-        cam_t_m2c = T_m2c[:3, 3].flatten().tolist()
+        cam_t_m2c = (T_m2c[:3, 3]*1000).flatten().tolist()
 
         gt_parameters = {
             "cam_R_m2c":cam_R_m2c,
@@ -702,7 +718,7 @@ class ObjectDetectionBop:
             txt_coordinates = {
                 "bbox_obj":[x1*res_x,y1*res_y,width*res_x,height*res_y],
                 "bbox_visib": [x1,y1,width,height],
-                "class_label": int(mesh2class[mesh_name]),
+                "class_label": mesh2class[mesh_name],
                 "class_name": mesh_name
             }
             return txt_coordinates
@@ -809,6 +825,14 @@ class ObjectDetectionBop:
     
 
 if __name__ == '__main__':
+
+    # # Use all available GPUs for rendering
+    # bpy.context.scene.cycles.device = 'GPU'
+    # bpy.context.preferences.addons['cycles'].preferences.get_devices()
+    # bpy.context.preferences.addons['cycles'].preferences.compute_device_type = 'CUDA'
+    # for device in bpy.context.preferences.addons['cycles'].preferences.devices:
+    #     device.use = True
+    # ###################TESTING GPU###################
     
     PARENT_DIR = os.path.normpath(os.getcwd()+os.sep+os.pardir)
     TEXTURES_DIR = os.path.join(PARENT_DIR,'blender_files/constraint_textures/')
@@ -920,6 +944,7 @@ if __name__ == '__main__':
     # Main rendering loop !!!!!!
     # circle_points = detection_helper.get_rotation_values_z(num_points=NUM_OF_IMAGES)
     circle_points = detection_helper.get_circle_points(radius=1.5,location=[0.0,0.0,1.6],num_points=NUM_OF_IMAGES) # Radius for the camera path.
+    
     for idx,loc_value in enumerate(circle_points):
         
         scene = detection_helper.scene
