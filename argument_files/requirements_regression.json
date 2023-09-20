@@ -1,9 +1,14 @@
 {
-    "output_path": "",
+    "output_path": "/path/for/dataset_dir/",
     
     "dataset_name": "ycb",
 
-    "Num_images_per_class" : 100,
+    "Num_images_per_class" : 10,
+
+    "Trajectories":{
+        "condition":"True",
+        "num_traj":10
+    },
 
     "render_parameters": {
         "device": "GPU",
@@ -14,8 +19,8 @@
     },
 
     "Parameters": {
-        "random_rotation_object": "False",
-        "random_placement_object":"False",
+        "random_rotation_object": "True",
+        "random_placement_object": "True",
         "random_color": "False",
         "random_textures": "False"
     },
@@ -39,8 +44,8 @@
         "lighting": {
 
             "condition": "False",
-            "min_value": "0.3",
-            "max_value": "15"},
+            "min_value": "0.2",
+            "max_value": "1.5"},
         
         "distance": {
             
@@ -50,10 +55,10 @@
 
         "blur":{
             
-            "condition":"True",
+            "condition": "False",
             
             "min_value": "0.05",
-            "max_value":"0.4"
+            "max_value": "0.3"
         }
     }
 }
