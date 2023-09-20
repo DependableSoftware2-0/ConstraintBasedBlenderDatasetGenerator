@@ -33,22 +33,34 @@ def main(parent_dir,models_dir,textures_dir,constraint_textures_dir,arguments_fi
     else:
         OUTPUT_DIR = Path(str(json_object['output_path']))
             
-    num_objects = RegressionDatasetGeneration().count_directories_with_obj_files(root_dir=models_path)
+    num_objects = RegressionDatasetGeneration().count_directories_with_obj_files(root_dir=models_dir)
     obj_renders_per_split = Dataset_helper().get_object_render_per_split(json_object)
     total_render_count = sum([num_objects*r[1] for r in obj_renders_per_split])
+
+    trajectories = json_object["Trajectories"]["condition"]
+    num_trajectories= json_object["Trajectories"]["num_traj"]
 
     print("*********************************************************************\n")
     print(f"Generating Regression dataset for {dataset_name} objects")
     print("\nNumber of objects per test case and per object : ", obj_renders_per_split)
-    print("\nTotal num of images to render : ",total_render_count)
+    print("\nTotal num of images to render : ",total_render_count*20)
     print("\n*********************************************************************")
-
+    
     try:
         user_input = input("\nEnter \"y\" to continue rendering or \"n\" to abort the process: ").strip().lower()
 
         if user_input == "y":
-            RegressionDatasetGeneration().generate_regression_dataset(json_object=json_object,
-                                                              models_dir=models_path,
+            if trajectories == "True":
+                RegressionDatasetGeneration().generate_regression_dataset_trajectories(json_object=json_object,
+                                                                                       models_dir=models_dir,
+                                                                                       textures_dir=textures_dir,
+                                                                                       num_trajectories=num_trajectories,
+                                                                                       output_dir=OUTPUT_DIR,
+                                                                                       dataset_name=dataset_name
+                                                                                       )
+            elif trajectories=="False":
+                RegressionDatasetGeneration().generate_regression_dataset(json_object=json_object,
+                                                              models_dir=models_dir,
                                                               textures_dir=textures_dir,
                                                               constraint_textures_dir=constraint_textures_dir,
                                                               output_dir = OUTPUT_DIR,
@@ -68,15 +80,18 @@ if __name__ == '__main__':
     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
     PARENT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
     PARENT_DIR = os.path.normpath(os.getcwd()+os.sep+os.pardir)
-    MODELS_DIR = os.path.join(PARENT_DIR,'blender_files/models/')
+    MODELS_DIR = os.path.join(PARENT_DIR,'blender_files/models/ycb_models/')
     TEXTURES_DIR = os.path.join(PARENT_DIR,'blender_files/textures/')
     CONSTRAINT_TEXTURES_DIR = os.path.join(PARENT_DIR,'blender_files/constraint_textures/')
     ARGS_FILE = os.path.join(PARENT_DIR,'argument_files/requirements_regression.json')
-    
+
+
+    print("Models dir is : ", MODELS_DIR)
+    print("Textures dir is : ", TEXTURES_DIR)
+
     main(parent_dir=PARENT_DIR,
          models_dir=MODELS_DIR,
          textures_dir=TEXTURES_DIR,
          constraint_textures_dir=CONSTRAINT_TEXTURES_DIR,
-         arguments_file=ARGS_FILE
+         arguments_file=ARGS_FILE,
          )
-
