@@ -128,11 +128,11 @@ class Blender_helper:
         bpy.data.objects['BezierCircle'].name = str(name)
         return bpy.data.objects[str(name)]
 
-    def set_random_curve_height(curve_object, min_value, max_value):
+    def set_random_curve_height(curve_object_name, min_value, max_value):
         """ This function sets the height of the path curve for randomness/variation
         """
         z_value = round(random.uniform(min_value, max_value), 2)
-        bpy.data.objects['camera_track'].location[2] = z_value
+        bpy.data.objects[str(curve_object_name)].location[2] = z_value
 
     def track_object(self, tracking_object_name, object_to_track):
         """ Function to make camera track the objects
