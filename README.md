@@ -3,16 +3,16 @@ Blender based dataset generation by setting soeme fixed constraint and randomize
 
 ## Installation 
 
-
-ToDO
+* Download blender (version 3.6) from the official website [blender.org](https://www.blender.org/download/).
+* Clone the repository and install the requirements
+```
+$> pip install requirements.txt
+```
 
 ## Usage
 
-1. First fill the config file in [requirements_classification.json](argument_files/requirements_classification.json) file in argument_files folder.
-    * Edit the "output_path" with the path of the outputs
-    * Number of images per class
-    * Change the remaining as per your requirements 
-2.  Execution
+* **TODO**
+
 
 
 ## Classification dataset
