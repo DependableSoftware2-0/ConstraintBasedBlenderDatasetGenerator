@@ -1,12 +1,12 @@
 {
-    "output_path": "/path/for/dataset_dir/",
+    "output_path": "/path/for/saving/dataset_dir/",
     
     "dataset_name": "ycb",
 
     "Num_images_per_class" : 10,
 
     "Trajectories":{
-        "condition":"True",
+        "condition":"False",
         "num_traj":10
     },
 
@@ -51,7 +51,20 @@
             
             "condition": "True",
             "min_value": "-10",
-            "max_value": "-50"},
+            "max_value": "-50",
+            
+            "light_parameters":{
+                "condition": "True",
+                "min_value": "0.2",
+                "max_value": "1.5"
+            },
+
+            "blur_parameters":{
+                "condition": "True",
+                "min_value": "0.05",
+                "max_value": "0.2"
+            }
+        },
 
         "blur":{
             
