@@ -11,9 +11,10 @@ $> pip install requirements.txt
 
 ## Usage
 
-* **TODO**
-
-
+* Dowlnoad the ycb CAD models using [download_ycb_models.py](download_ycb_models.py).
+  ```
+  python3 download_ycb_models.py
+  ```
 
 ## Classification dataset
 * Set the parameters in the classification config file, [requirements_classification.json](argument_files/requirements_classification.json) file in the argument_files folder.
