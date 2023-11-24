@@ -35,7 +35,6 @@ $> blender -b -P generate_regression_dataset.py
 
 
 ## Object detection dataset
-* Set the parameters in the regression config file, [requirements_object_detection.json](argument_files/requirements_object_detection.json) file in the argument_files folder.
 * For information on setting the parameters check the [object_detection_ReadMe.md](argument_files/readme_files/object_detection_ReadMe.md) file
 ```
 $> cd src/
