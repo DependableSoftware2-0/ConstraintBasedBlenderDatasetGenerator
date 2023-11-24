@@ -1,13 +1,8 @@
 # Regression Dataset
 
 ## Introduction
-The datasets generated using [generate_regression_dataset.py](../../src/generate_regression_dataset.py) code, are in the form of a classification task but with extra information regarding scene
-parameters such as camera pose, light intensity, and object-camera distance, depth of field value of camera, 2D pose of object in camera frame and other necessary details in the form of json file for each image.
-
-<div style="display: flex; justify-content: space-between;">
-  <img src="../../baseball.gif" alt="GIF" width="40%" />
-  <img src="../../baseball_entropy.png" alt="Image" width="47%" />
-</div>
+The datasets generated using [generate_classification_dataset.py](../../src/generate_classification_dataset.py) code, are in the form of a classification task but with extra information regarding scene
+parameters such as camera pose, light intensity, and object-camera distance, depth of field value of camera and other necessary details in the form of json file for each image.
 
 
 ### Folder structure
