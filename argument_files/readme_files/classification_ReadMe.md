@@ -1,4 +1,4 @@
-# Regression Dataset
+# Classification Dataset
 
 ## Introduction
 The datasets generated using [generate_classification_dataset.py](../../src/generate_classification_dataset.py) code, are in the form of a classification task but with extra information regarding scene
