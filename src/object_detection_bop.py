@@ -846,7 +846,8 @@ if __name__ == '__main__':
     JSON_DIR = SAVE_DIR
     
     NUM_OF_IMAGES = 10
-
+    RES_X = 1280
+    RES_Y = 720
     dataset_info = {'1': 'masterchefcan',
                 '2': 'crackerbox',
                 '3': 'sugarbox',
@@ -896,8 +897,8 @@ if __name__ == '__main__':
     # Set the render parameters.
     detection_helper.set_render_parameters(device='GPU',
                                            render_engine='CYCLES',
-                                           res_x=1280,
-                                           res_y=720,
+                                           res_x=RES_X,
+                                           res_y=RES_Y,
                                            num_samples=100
                                            )
 
