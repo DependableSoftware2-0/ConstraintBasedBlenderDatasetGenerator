@@ -1,5 +1,10 @@
 # Constraint based Dataset Generator
-Blender based dataset generation by setting soeme fixed constraint and randomized other settings.
+Blender based dataset generation by setting some fixed constraint and randomized other parameters such as camera pose, light intensity, and object-camera distance, depth of field value of camera, 2D pose of object in camera frame and other necessary details.
+
+<div style="display: flex; justify-content: space-between;">
+  <img src="../../baseball.gif" alt="GIF" width="40%" />
+  <img src="../../baseball_entropy.png" alt="Image" width="47%" />
+</div>
 
 ## Installation 
 
